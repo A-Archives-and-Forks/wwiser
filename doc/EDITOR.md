@@ -721,3 +721,20 @@ sound > (volumes) > bus > bus > ... > bus > output
 ## MIDI
 - wwise supports MIDI objects as BGM
 - can be defined to play using Wwise Synth, or with a sampler by importing individual .wav notes
+
+## Wwise 2025.1 changes
+https://www.audiokinetic.com/en/public-library/2025.1.2_8976/?source=SDK&id=whatsnew_2025_1_new_features.html
+
+Some interesting changes:
+- AkMusicEngine library is removed
+- AK::MusicEngine namespace, related functions and library are removed. The functionality of AK::MusicEngine was all moved to AK::SoundEngine and otherwise works the same way as before
+- Audio Devices: Renamed to Devices
+- Master-Mixer Hierarchy: Renamed to Busses
+- Actor-Mixer Hierarchy: Renamed to Containers
+- Interactive Music Hierarchy: Moved to Containers and renamed to Music (Migrated)
+- WG-76834 The Actor-Mixer object was renamed to Property Container.
+- WG-76835 The Master Audio Bus was renamed to Main Audio Bus.
+- WG-78540 The Master-Mixer Console was renamed to Busses Console.
+- Event limiting
+- RTPC muting
+- External Source - WAV Playback
