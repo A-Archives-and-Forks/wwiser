@@ -601,9 +601,9 @@ Some tricks you can do with filters:
 - Ignore sfx: maybe you have `common.bnk` with lots of sfx but a handful of jingles. Pass `jingle_*` (if named) or an event ID list to only read those while ignoring other sfx events, or pass `/play_sfx_*` to ignore SFX directly (if you have names).
 - Load many banks: sometimes games separate and load `.bnk` in non-obvious ways. You could just load everything then filter by `music.bnk` to get music but ensure all needed banks are there (ignoring sfx or voice banks).
 - Skip layered sounds, like SFX noise pasted on top of music, using sub-node filters
-- Alter `.txtp` order: set *generate rest* and apply filters to force filtered names to generate first (alters detected dupes)
+- Alter `.txtp` order: apply filters to force filtered names to generate first (alters detected dupes)
 
-*Generate rest* option is useful to alter name order. Some games have several events that do the same thing, for example `jukebox01` then `music01_fields` (dupe). The later, being a dupe, would be ignored but the name is more descriptive and preferable. To fix this, you can filter by `music*` *and* pass the option to *"generate rest of files after filtering"*. This reorders so `music01_fields` goes first, then `jukebox01` (now a dupe = ignored).
+*Generate rest* option is useful to alter name order. Some games have several events that do the same thing, for example `jukebox01` then `music01_fields` (dupe). The later, being a dupe, would be ignored but the name is more descriptive and preferable. To fix this, you can filter by `music*` *and* pass the option to *"generate rest of files after filtering"*. This reorders so `music01_fields` goes first, then `jukebox01` (now a dupe = ignored) and any other event not in filters.
 
 When using the "generate unused" option and filtering nodes, by default no "unused" nodes are created for technical reasons (everything that didn't make it into a `.txtp` is considered unused, including anything filtered). You can manually include unused objects by including "unused" filters with a `~` prefixes.
 

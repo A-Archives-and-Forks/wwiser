@@ -302,14 +302,31 @@ class Generator(object):
         self._txtpcache.no_txtp = False
         return
 
+    def _classify_filtered_node(self, node, nsid, nodes_named, nodes_unnamed):
+        # put named nodes in a list to generate first, then unnamed nodes.
+        # Useful when multiple events do the same thing, but we only have wwnames for one
+        # (others may be leftovers). This way named ones are generated and others are ignored
+        # as dupes. Can be disabled to treat all as unnamed = in bank order.
+        hashname = nsid.get_attr('hashname')
+        if hashname and not self._bank_order:
+            item = (hashname, node)
+            nodes_named.append(item)
+        else:
+            item = (nsid.value(), node)
+            nodes_unnamed.append(item)
+
     def _write_bank(self, bank):
         items = bank.find(name='listLoadedItem')
         if not items:
             return
 
-        nodes_allow = []
-        nodes_named = []
-        nodes_unnamed = []
+        # TODO: improve
+        # order to create better TXTP names: filtered named > filterd unnamed > regular named > regular unnamed
+        # (regular are only added if filters are not active, or if the 'rest' flag is set)
+        nodes_allow_named = []
+        nodes_allow_unnamed = []
+        nodes_rest_named = []
+        nodes_rest_unnamed = []
 
         # save candidate nodes to generate
         nodes = items.get_children()
@@ -327,7 +344,7 @@ class Generator(object):
             if self._filter.active:
                 allow = self._filter.allow_outer(node, nsid, classname=classname)
                 if allow:
-                    nodes_allow.append(node)
+                    self._classify_filtered_node(node, nsid, nodes_allow_named, nodes_allow_unnamed)
                     continue
                 elif not self._filter.generate_rest:
                     continue # ignore non-"rest" nodes
@@ -341,32 +358,31 @@ class Generator(object):
             if not allow:
                 continue
 
-            # put named nodes in a list to generate first, then unnamed nodes.
-            # Useful when multiple events do the same thing, but we only have wwnames for one
-            # (others may be leftovers). This way named ones are generated and others are ignored
-            # as dupes. Can be disabled to treat all as unnamed = in bank order.
-            hashname = nsid.get_attr('hashname')
-            if hashname and not self._bank_order:
-                item = (hashname, node)
-                nodes_named.append(item)
-            else:
-                item = (nsid.value(), node)
-                nodes_unnamed.append(item)
+            self._classify_filtered_node(node, nsid, nodes_rest_named, nodes_rest_unnamed)
 
         # prepare nodes in final order
         nodes = []
-        nodes += nodes_allow
 
         # usually gives better results with dupes
         # older python(?) may choke when trying to sort name+nodes, set custom handler to force hashname only
-        nodes_named.sort(key=lambda x: x[0] )
+        nodes_rest_named.sort(key=lambda x: x[0] )
+        nodes_allow_named.sort(key=lambda x: x[0] )
 
-        for __, node in nodes_named:
+        # order by filter name
+        if self._filter.active:
+            self._filter.sort_filtered_nodes(nodes_allow_named)
+
+        for __, node in nodes_allow_named:
             nodes.append(node)
-        for __, node in nodes_unnamed:
+        for __, node in nodes_allow_unnamed:
             nodes.append(node)
 
-        logging.debug("generator: writting bank nodes (names: %s, unnamed: %s, filtered: %s)", len(nodes_named), len(nodes_unnamed), len(nodes_allow))
+        for __, node in nodes_rest_named:
+            nodes.append(node)
+        for __, node in nodes_rest_unnamed:
+            nodes.append(node)
+
+        logging.debug("generator: writting bank nodes (names: %s / %s, unnamed: %s / %s)", len(nodes_rest_named), len(nodes_allow_named), len(nodes_rest_unnamed), len(nodes_allow_unnamed))
 
         # make txtp for nodes
         for node in nodes:

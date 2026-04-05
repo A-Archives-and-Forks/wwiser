@@ -107,6 +107,8 @@ class GeneratorFilterItem(object):
         if   self.use_sid:
             comps = [str(sid)]
         elif self.use_bank:
+            if not bankname: #only happens when sorting
+                return False
             comps = [self.get_bankcomp(bankname)]
         elif self.use_class:
             comps = [classname]
@@ -263,3 +265,23 @@ class GeneratorFilter(object):
 
     def has_unused(self):
         return self._has_mode(_MODE_UNUSED)
+
+    def _sort_key(self, item):
+        hashname, _node = item
+
+        cfg = self._cfgs[_MODE_OUTER]
+        for i, filter in enumerate(cfg.filters):
+            if filter.match(0, hashname, None, None, None):
+                return (0, i)
+
+        #TODO: check if should also match/order banks
+        # .bnk filters go after it
+        return (1, 0)
+
+    # sort the generator's node list (afters filters) by order of filters
+    #
+    # for example if bnk has Play_Jukebox_BGM01 and Play_Main_BGM01:
+    # - filters = BGM*.bnk: makes Play_Jukebox_BGM01 > Play_Main_BGM01
+    # - filters = Play_Main_BGM*, BGM*.bnk: makes Play_Main_BGM01 > Play_Jukebox_BGM01
+    def sort_filtered_nodes(self, nodes_named):
+        nodes_named.sort(key=self._sort_key)
