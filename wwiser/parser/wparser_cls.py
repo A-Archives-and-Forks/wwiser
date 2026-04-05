@@ -278,7 +278,7 @@ def CAkAction__Create(obj, actionType):
         0x2000: CAkActionSetAkProp, #AkPropID_HPF
         0x2100: CAkActionPlayEvent,
         0x2200: CAkActionResetPlaylist,
-        0x2300: CAkActionPlayEventUnknown, #normally not defined
+        0x2300: CAkActionPlayEventUnknown, #custom versions, possibly used to trigger both regular or dialogueEvents
         0x3000: CAkActionSetAkProp, #AkPropID_HPF
         0x3100: CAkActionSetFX,
         0x3200: CAkActionSetFX,

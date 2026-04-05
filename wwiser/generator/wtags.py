@@ -168,7 +168,7 @@ class Tags(object):
                     if row.guidname:
                         outfile.write("# %%TITLE    %s\n" %(row.guidname))
                     if row.path:
-                        outfile.write("# %%PATH     %s\n" %(row.path))
+                        outfile.write("# %%WEM_PATH %s\n" %(row.path)) #PATH is reserved in foobar
                     if row.objpath:
                         outfile.write("# %%OBJPATH  %s\n" %(row.objpath))
                 outfile.write('%s\n' % (file))
