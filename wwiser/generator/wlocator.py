@@ -322,6 +322,10 @@ class Locator(object):
         if cleanroot and path.startswith(self._root_path):
             path = path[len(self._root_path):]
 
+        # loopin' dir
+        if path == '...':
+            path == '..'
+
         return path
 
     def clean_path(self, path):
