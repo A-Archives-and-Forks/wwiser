@@ -3841,9 +3841,6 @@ def CAkBankMgr__ProcessPluginChunk(obj):
 #******************************************************************************
 # chunks
 
-def parse_chunk_default(obj):
-    pass
-
 chunk_dispatch = {
     b'BKHD': CAkBankMgr__ProcessBankHeader,
     b'HIRC': CAkBankMgr__ProcessHircChunk,
@@ -3875,7 +3872,11 @@ def parse_chunk(obj):
         tag = obj.lastval
         obj.U32('dwChunkSize').omax()
 
-        dispatch = chunk_dispatch.get(tag, parse_chunk_default)
+        dispatch = chunk_dispatch.get(tag)
+        if not dispatch:
+            if tag == b'\x00\x00\x00\x00':
+                raise wmodel.VersionError("error, padding chunk found (maybe incorrectly ripped, recheck tools)", obj)
+            raise wmodel.VersionError("error, unknown chunk type %s", chunk)
         dispatch(obj)
     except wmodel.ParseError as e:
         obj.add_error(str(e))

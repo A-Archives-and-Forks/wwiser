@@ -185,6 +185,8 @@ class Locator(object):
         return self._externals
 
     def _prepare_files(self):
+        if not self._version:
+            return
 
         if self._version < _CODEC_EXTENSION_NEW_VERSION:
             exts_wems = ['.ogg', '.logg', '.wav', '.lwav', 'xma']
