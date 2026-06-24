@@ -262,8 +262,7 @@ class Locator(object):
             #    bank = '%s[%s]' % (bank, 'localized')
 
             nroot = node.get_root()
-            bankname = os.path.basename(nroot.get_filename()) #[:-4] #
-            bankname = os.path.splitext(bankname)[0]
+            bankname = nroot.get_bankname()
             
             # use bank's hashname if available
             nbnk = nroot.find1(name='BankHeader')

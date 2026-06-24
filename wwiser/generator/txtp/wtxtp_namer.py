@@ -154,8 +154,7 @@ class TxtpNamer(object):
             name = None
 
             nroot = node.get_root()
-            bankname = os.path.basename(nroot.get_filename()) #[:-4] #
-            bankname = os.path.splitext(bankname)[0]
+            bankname = nroot.get_bankname()
 
             # use bank's hashname if available
             nbnk = nroot.find1(name='BankHeader')
@@ -323,8 +322,7 @@ class TxtpNamer(object):
         node = self.node #named based on default node, usually an event
 
         nroot = node.get_root()
-        bankname = os.path.basename(nroot.get_filename()) #[:-4] #
-        bankname = os.path.splitext(bankname)[0]
+        bankname = nroot.get_bankname()
 
         name = "%s-%05i" % (bankname, txtp.txtpcache.stats.current_name_count())
 
