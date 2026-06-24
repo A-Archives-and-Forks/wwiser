@@ -78,7 +78,7 @@ class GeneratorFilterItem(object):
             parts = value.split('-')
             bankname = parts[0]
             index = parts[1].split('~')[0] #remove possible extra parts
-            self.value = self.get_bankcomp(bankname + '.bnk')
+            self.value = self.get_bankcomp(bankname)
             self.value_index = int(index)
 
         else:
@@ -88,14 +88,16 @@ class GeneratorFilterItem(object):
         return
 
     def get_bankcomp(self, bankname):
+        # TODO: improve
+        # bankname here shouldn't have an extension but filters do, so add it back
+
         if self.is_pattern:
-            return bankname
+            return '%s.bnk' % (bankname)
 
         # use bank's hash when no wildcards are used, to improve detection
-        bankbase, __ = os.path.splitext(bankname)
-        if bankbase.isnumeric():
+        if bankname.isnumeric():
             return bankname
-        bankhash = wfnv.Fnv().get_hash(bankbase)
+        bankhash = wfnv.Fnv().get_hash(bankname)
         return '%s.bnk' % (bankhash)
 
     def match(self, sid, hashname, classname, bankname, index):
@@ -120,7 +122,7 @@ class GeneratorFilterItem(object):
         else:
             comps = [str(sid), hashname] # bnk and hashnames sometimes clash
 
-        # test desined external comp vs current item's filter value
+        # test external comp vs current item's filter value
         for comp in comps:
             if not comp:
                 continue
@@ -187,7 +189,8 @@ class GeneratorFilter(object):
         self.skip_unused = False # flag only: generate but don't write unused files
 
     def set_default_hircs(self, items):
-        self._default_hircs = items
+        for item in items:
+            self._default_hircs.append(item.lower())
 
     def add(self, items):
         if not items:
@@ -219,7 +222,9 @@ class GeneratorFilter(object):
         if hashname:
             hashname = hashname.lower()
         classname = classname or node.get_name().lower()
-        bankname = bankname or node.get_root().get_filename().lower()
+        classname = classname.lower()
+        bankname = bankname or node.get_root().get_bankname()
+        bankname = bankname.lower()
         index = index or node.get_attr('index')
         if mode == _MODE_INNER and classname == 'caksound':
             hashname = bnode.sound.nsrc.get_attr('guidname')
@@ -246,18 +251,31 @@ class GeneratorFilter(object):
         return allow
 
     # Checks if an outer object should be generated, depending on outer filters.
-    def allow_outer(self, node, nsid=None, hashname=None, classname=None, bankname=None, index=None):
+    def allow_outer(self, node, nsid, classname=None):
+        hashname = None
+        classname= None
+        bankname = None
+        index = None
         return self._allow(_MODE_OUTER, node, nsid, hashname, classname, bankname, index)
 
     # Same, the difference between inner/outer being, if filter is 123456789 (outer) it should generate
     # only that ID *and* generate any sub-nodes inside (inner). While if filter @/123456789 it
     # should exclude sub-nodes with that ID.
-    def allow_inner(self, node, nsid=None, hashname=None, classname=None, bankname=None, index=None, bnode=None):
+    def allow_inner(self, node, nsid=None, bnode=None):
+        hashname = None
+        classname = None
+        bankname = None
+        index = None
         return self._allow(_MODE_INNER, node, nsid, hashname, classname, bankname, index, bnode)
 
     # Same for unused. When filtering regular nodes, any others become "unused", so they are excluded by
     # default. You can include them back here.
-    def allow_unused(self, node, nsid=None, hashname=None, classname=None, bankname=None, index=None):
+    def allow_unused(self, node):
+        nsid = None
+        hashname = None
+        classname = None
+        bankname = None
+        index = None
         return self.generate_rest or self._allow(_MODE_UNUSED, node, nsid, hashname, classname, bankname, index)
 
     def _has_mode(self, mode):
