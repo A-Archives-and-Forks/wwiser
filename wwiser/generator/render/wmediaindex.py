@@ -28,34 +28,36 @@ class MediaIndex(object):
             return
 
         # preload indexes for internal wems
-        bankname = nchunk.get_root().get_filename()
+        bankfile = nchunk.get_root().get_filename()
         nsids = nchunk.finds(type='sid')
         for nsid in nsids:
             sid = nsid.value()
             attrs = nsid.get_parent().get_attrs()
             index = attrs.get('index')
             if index is not None:
-                self._add_media_index(bankname, sid, index)
-        return
+                self._add_media_index(bankfile, sid, index)
 
     # A game could load bgm.bnk + media1.bnk, and bgm.bnk point to sid=123 in media1.bnk.
     # But if user loads bgm1.bnk + media1.bnk + media2.bnk both media banks may contain sid=123,
     # so media_banks is used to find the index inside a certain bank (sid repeats allowed) first,
     # while media_sids is used to find any bank+index that contains that sid (repeats ignored).
-    def _add_media_index(self, bankname, sid, index):
-        self._media_banks[(bankname, sid)] = index
+    # Use full name rather than extensionless
+    def _add_media_index(self, bankfile, sid, index):
+        self._media_banks[(bankfile, sid)] = index
         if sid not in self._media_sids:
-            self._media_sids[sid] = (bankname, index)
+            self._media_sids[sid] = (bankfile, index)
 
-    def get_media_index(self, bankname, sid):
+    def get_media_index(self, node, sid):
+        bankfile = node.get_root().get_filename()
+
         #seen 0 in v112 test banks
         if not sid:
             return None
 
         # try in current bank
-        index = self._media_banks.get((bankname, sid))
+        index = self._media_banks.get((bankfile, sid))
         if index is not None:
-            return (bankname, index)
+            return (bankfile, index)
 
         # try any bank
         media = self._media_sids.get(sid)

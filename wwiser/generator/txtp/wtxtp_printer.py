@@ -309,9 +309,8 @@ class TxtpPrinter(object):
 
         elif sound.source.internal and not self._txtpcache.bnkskip:
             # internal/memory stream
-            bankname = sound.nsrc.get_root().get_filename()
-            mdi = self._txtpcache.mediaindex
-            media = mdi.get_media_index(bankname, sound.source.tid)
+            mediaindex = self._txtpcache.mediaindex
+            media = mediaindex.get_media_index(sound.nsrc, sound.source.tid)
             extension = sound.source.extension
             if self._txtpcache.alt_exts:
                 extension = sound.source.extension_alt
@@ -319,22 +318,25 @@ class TxtpPrinter(object):
             if media and self._simpler:
                 # when finding dupes we want to ignore bank origins were same sounds are loaded in multiple .bnk
                 # (would be technically possible that 2 .wem in .bnk share same id but content differs, extremely unlikely though)
-                bankname, index = media
-                #name += self._txtpcache.locator.find_bnk_path(bankname, lang_fullname)
+                bankfile, index = media
                 name += 'banks/' #sometimes id repeat between banks in different localization dirs
                 name += "%s.%s" % (sound.source.tid, extension)
-                #info += "  ##%s #s%s" % (bankname, index + 1) #matters for dupes
+                self._txtpcache.stats.register_bank(bankfile)
+
             elif media:
-                bankname, index = media
-                name += self._txtpcache.locator.find_bnk_path(bankname, lang_fullname)
-                name += "%s #s%s" % (bankname, index + 1)
+                bankfile, index = media
+                name += self._txtpcache.locator.find_bnk_path(bankfile, lang_fullname)
+                name += "%s #s%s" % (bankfile, index + 1)
                 info += "  ##%s.%s" % (sound.source.tid, extension) #to check source in info tree
+                self._txtpcache.stats.register_bank(bankfile)
+
             elif sound.source.internal_ebp:
                 # memory audio in UE4 may be in a RAM .uasset, but .bnk has no way to known this so allow as loose .wem
                 name += self._txtpcache.locator.find_wem_path(sound.source.tid, extension, lang_fullname)
                 name = name + "%s.%s" % (sound.source.tid, extension)
                 info += "  ##memory"
-                mdi.set_event_based_packaging(True)
+                mediaindex.set_event_based_packaging(True)
+
             else:
                 # old memory audio must be in a bnk
                 name = "?" + name + "%s.%s" % (sound.source.tid, extension)
@@ -345,7 +347,6 @@ class TxtpPrinter(object):
                 info += " ##unsupported wmid"
 
             self.has_internals = True
-            self._txtpcache.stats.register_bank(bankname)
 
         else:
             # regular stream

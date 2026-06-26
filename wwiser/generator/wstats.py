@@ -67,8 +67,8 @@ class Stats(object):
     def current_name_count(self):
         return self.names
 
-    def register_bank(self, bankname):
-        self._banks[bankname] = True
+    def register_bank(self, bankfile):
+        self._banks[bankfile] = True
         return
 
     def get_used_banks(self):
