@@ -75,8 +75,8 @@ class Builder(object):
     #--------------------------------------------------------------------------
 
     # info about loaded banks
-    def add_loaded_bank(self, bank_id, bankname):
-        self._loaded_banks[bank_id] = bankname
+    def add_loaded_bank(self, bank_id, bankfile):
+        self._loaded_banks[bank_id] = bankfile
 
     #--------------------------------------------------------------------------
 
@@ -229,23 +229,23 @@ class Builder(object):
                 # when asked for a target bank (action): should exist
                 if bank_id in self._loaded_banks:
                     if (bank_id, tid) not in self._missing_nodes_loaded: 
-                        bankname = self._loaded_banks[bank_id]
-                        logging.debug("generator: missing node %s in loaded bank %s", tid, bankname)
+                        bankfile = self._loaded_banks[bank_id]
+                        logging.debug("generator: missing node %s in loaded bank %s", tid, bankfile)
 
                     # bank is loaded: requested ID must be leftover garbage
                     self._missing_nodes_loaded[(bank_id, tid)] = True
 
                 else:
-                    bankname = nbankid_target.get_attr('hashname')
-                    if not bankname:
-                        bankname = str(nbankid_target.value())
+                    bankfile = nbankid_target.get_attr('hashname')
+                    if not bankfile:
+                        bankfile = str(nbankid_target.value())
 
                     if (bank_id, tid) not in self._missing_nodes_others:
-                        logging.debug("generator: missing node %s in non-loaded bank %s", tid, bankname)
+                        logging.debug("generator: missing node %s in non-loaded bank %s", tid, bankfile)
 
                     # bank not loaded: save bank name too
                     self._missing_nodes_others[(bank_id, tid)] = True
-                    self._missing_banks[bankname] = True
+                    self._missing_banks[bankfile] = True
 
             else:
                 if (bank_id, tid) not in self._missing_nodes_unknown:

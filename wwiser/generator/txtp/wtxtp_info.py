@@ -235,9 +235,9 @@ class TxtpInfo(object):
             node = ninfo.get_node()
             if node:
                 path = node.get_root().get_path()
-                bank = node.get_root().get_filename()
+                bankfile = node.get_root().get_filename()
                 path = self._txtpcache.locator.clean_path(path)
-                bankpath = path + bank  # print path from root as reference and for cleaner
+                bankpath = path + bankfile  # print path from root as reference and for cleaner
                 if bankpath not in banks:
                     banks.append(bankpath)
         self._banks = banks
@@ -382,7 +382,8 @@ class TxtpInfoNode(object):
             line += ' %i' % (nsid.value())
 
         if multibank:
-            line += ' / %s' % (node.get_root().get_filename())
+            bankfile = node.get_root().get_filename()
+            line += ' / %s' % (bankfile)
 
         self._info.append( '#%s%s\n' % (self.padding, line) )
 

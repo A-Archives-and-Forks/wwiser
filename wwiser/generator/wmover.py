@@ -64,7 +64,7 @@ class Mover(object):
                 logging.info("generator: cannot move %s (exists on output folder)", in_name)
             return
 
-        bank = nroot.get_filename()
+        bankfile = nroot.get_filename()
         wem_exists = os.path.exists(in_name)
         if not wem_exists:
             if self._txtpcache.alt_exts:
@@ -81,14 +81,14 @@ class Mover(object):
                 wem_exists = os.path.exists(in_name)
 
         if not wem_exists:
-            logging.info("generator: cannot move %s (file not found) / %s", in_name, bank)
+            logging.info("generator: cannot move %s (file not found) / %s", in_name, bankfile)
             return
 
         # it's nice to keep original extension case (also for case-sensitive OSs)
         in_name, out_name = self.fix_case(in_name, out_name)
 
         os.rename(in_name, out_name)
-        logging.debug("generator: moved %s / %s", in_name, bank)
+        logging.debug("generator: moved %s / %s", in_name, bankfile)
 
         return
 

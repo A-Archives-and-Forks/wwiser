@@ -174,13 +174,13 @@ class Generator(object):
         banks = []
         for bank in self._banks:
             root = bank.get_root()
-            bankname = root.get_filename()
+            bankfile = root.get_filename()
             bankpath = root.get_path()
 
             if self._txtpcache.lang:
                 lang = wlang.Lang(bank)
                 if not lang.matches(self._txtpcache.lang):
-                    logging.debug("generator: ignored %s lang in %s/%s", lang.fullname, bankpath, bankname)
+                    logging.debug("generator: ignored %s lang in %s/%s", lang.fullname, bankpath, bankfile)
                     continue
             banks.append(bank)
 
@@ -220,13 +220,13 @@ class Generator(object):
             root = bank.get_root()
             version = root.get_version()
             bank_id = root.get_id()
-            bankname = root.get_filename()
+            bankfile = root.get_filename()
 
             if version in wdefs.partial_versions:
                 logging.warning("generator: WARNING, ignored unsupported bank version %s (can't make .txtp)", version)
                 continue
 
-            self._builder.add_loaded_bank(bank_id, bankname)
+            self._builder.add_loaded_bank(bank_id, bankfile)
 
             for nchunk in root.get_children():
                 chunkname = nchunk.get_name()
@@ -275,7 +275,7 @@ class Generator(object):
                         nsid = node.find1(type='sid')
                         if not nsid:
                             hircname = node.get_name()
-                            logging.info("generator: not found for %s in %s", hircname, bankname) #???
+                            logging.info("generator: not found for %s in %s", hircname, bankfile) #???
                             continue
                         sid = nsid.value()
 
@@ -457,13 +457,13 @@ class Generator(object):
 
         except Exception: #as e
             sid = 0
-            bankname = '?'
+            bankfile = '?'
             nsid = node.find1(type='sid')
             if nsid:
                 sid = nsid.value()
-                bankname = nsid.get_root().get_filename()
+                bankfile = nsid.get_root().get_filename()
 
-            logging.info("generator: ERROR! node %s in %s", sid, bankname)
+            logging.info("generator: ERROR! node %s in %s", sid, bankfile)
             raise
 
     #--------------------------------------------------------------------------
