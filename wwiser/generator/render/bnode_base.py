@@ -107,7 +107,7 @@ class CAkHircNode(object):
 
     def _make_transition_rules(self, node, is_switch):
         rules = bnode_rules.AkTransitionRules(node)
-        if not is_switch and rules.ntrns:
+        if not is_switch and rules.has_transitions():
             # rare in playlists (Polyball, Spiderman)
             self._builder.report_transition_object()
         return rules

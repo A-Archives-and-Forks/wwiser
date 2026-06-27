@@ -10,6 +10,7 @@ class AkFade(object):
         self.time = 0
         self.offset = 0
         self.curve = None
+        self.ncurve = None
 
         self._build(node)
 
@@ -27,18 +28,21 @@ class AkFade(object):
             self.offset = nfo.value()
         if nfc:
             self.curve = nfc.value()
+            self.ncurve = nfc
 
 
 class AkMusicTransSrcRule(object):
     def __init__(self, node):
         self.fade = None
         self.type = None
+        self.ntype = None
         self.play = False #post exit
         self._build(node)
 
     def _build(self, node):
         self.fade = AkFade(node)
-        self.type = node.find1(name='eSyncType').value()
+        self.ntype = node.find1(name='eSyncType')
+        self.type = self.ntype.value()
         self.play = node.find1(name='bPlayPostExit').value() != 0
 
         #ncue = node.find(name='uCueFilterHash')
@@ -50,12 +54,14 @@ class AkMusicTransDstRule(object):
     def __init__(self, node):
         self.fade = None
         self.type = None
-        self.play = False #pre extry
+        self.ntype = None
+        self.play = False #pre entry
         self._build(node)
 
     def _build(self, node):
         self.fade = AkFade(node)
-        self.type = node.find1(name='eEntryType').value()
+        self.ntype = node.find1(name='eEntryType')
+        self.type = self.ntype.value()
         self.play = node.find1(name='bPlayPreEntry').value() != 0
 
         # varies with version
@@ -84,13 +90,13 @@ class AkMusicTransitionObject(object):
         self._build(node)
 
     def _build(self, node):
-        self.ntid = node.find1(name='segmentID') 
+        self.ntid = node.find1(name='segmentID')
         self.tid = self.ntid.value()
 
         nfin = node.find1(name='fadeInParams')
         self.fin = AkFade(nfin)
         nfout = node.find1(name='fadeOutParams')
-        self.fin = AkFade(nfout)
+        self.fout = AkFade(nfout)
 
         self.pre  = node.find1(name='bPlayPreEntry').value() != 0
         self.post = node.find1(name='bPlayPostExit').value() != 0
@@ -133,7 +139,7 @@ class AkTransitionRule(object):
 class AkTransitionRules(object):
     def __init__(self, node):
         self._rules = []
-        self.ntrns = []
+        self._ntrns = [] #existing usable transitions for quick testing
 
         self._build(node)
 
@@ -143,7 +149,7 @@ class AkTransitionRules(object):
             rule = AkTransitionRule(nrule)
             self._rules.append(rule)
             if rule.rtrn and rule.rtrn.tid: #segment 0 = useless
-                self.ntrns.append(rule.rtrn)
+                self._ntrns.append(rule.rtrn)
 
     def get_rule(self, src_id, dst_id):
         #TODO implement (detect -1/0 too)
@@ -152,3 +158,6 @@ class AkTransitionRules(object):
 
     def get_rules(self):
         return self._rules
+
+    def has_transitions(self):
+        return self._ntrns
