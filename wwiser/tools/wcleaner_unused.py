@@ -139,7 +139,7 @@ class CleanerUnused(object):
             try:
                 file_size = os.path.getsize(filepath)
             except:
-                logging.warn("cleaner: can't get filesize for %s", filepath)
+                logging.warning("cleaner: can't get filesize for %s", filepath)
                 continue
 
             if file_size not in self._sizes_paths:
@@ -162,7 +162,7 @@ class CleanerUnused(object):
 
         file = root + file_part
         if not os.path.isfile(file):
-            logging.warn("cleaner: not found %s", file) #???
+            logging.warning("cleaner: not found %s", file) #???
             print('ko', file)
             self._errors += 1
             return
@@ -195,7 +195,7 @@ class CleanerUnused(object):
         try:
             file_size = os.path.getsize(file)
         except:
-            logging.warn("cleaner: can't get filesize for %s", file)
+            logging.warning("cleaner: can't get filesize for %s", file)
 
 
         items = self._sizes_paths.get(file_size)

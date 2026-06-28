@@ -54,7 +54,7 @@ class Tags(object):
             self._write_wem()
 
         except Exception: # as e
-            logging.warn("tags: PROCESS ERROR! (report)")
+            logging.warning("tags: PROCESS ERROR! (report)")
             logging.exception("")
             raise
         return

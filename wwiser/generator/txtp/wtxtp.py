@@ -112,7 +112,7 @@ class Txtp(object):
         if printer.has_externals and self.txtpcache.externals.active:
             # get external IDs
             if len(printer.externals) > 1:
-                logging.warn("generator: ignoring multiple externals (report)")
+                logging.warning("generator: ignoring multiple externals (report)")
                 elems = None
             else:
                 elems = self.txtpcache.externals.get(printer.externals[0], None)
