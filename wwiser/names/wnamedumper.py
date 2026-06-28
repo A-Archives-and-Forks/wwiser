@@ -17,11 +17,11 @@ class Namedumper(object):
         self._missing = missing
         self._bankpaths = bankpaths
         self._conditionals = set()
-        self._bank_mix = self._get_bank_mix()
+        self._is_bank_mixed = self._get_bank_mixed()
 
 
     # true if there are sfx and localized, false if all are from the same type
-    def _get_bank_mix(self):
+    def _get_bank_mixed(self):
         is_sfx = False
         is_lang = False
         for _, loc in self._bankpaths.keys():
@@ -86,11 +86,13 @@ class Namedumper(object):
                 continue
 
             # conditionals: same as above but for existing names, that don't go to missing
-            if row.hashtypes and any(x in row.hashtypes for x in wdefs.fnv_conditionals_origin):
-                self._conditionals.add(row.id)
+            if row.hashtypes:
+                row_hashtypes_only = [item[0] for item in row.hashtypes] # (hashtype, bankkey)
+                if any(x in row_hashtypes_only for x in wdefs.fnv_conditionals_origin):
+                    self._conditionals.add(row.id)
 
             rows.append(row)
-                
+
         if self._cfg.classify_bank:
             # clasified list: include rows divided into sections
             lines = self._include_classify(rows)
@@ -118,90 +120,93 @@ class Namedumper(object):
 
         return lines
 
+    # clasified list: include rows divided into sections
     def _include_classify(self, rows):
         lines = []
 
         hashtypes_lines = {}
+
+        bankkey_empty = (self.EMPTY_BANKTYPE, False)
 
         # save names in temp sublines per bank (ids not in names are in self._missing)
         for row in rows:
             hashtypes = row.hashtypes
             if not hashtypes:
                 hashtypes = set()
-                hashtypes.add((wdefs.fnv_no, self.EMPTY_BANKTYPE))
+                hashkey = (wdefs.fnv_no, bankkey_empty)
+                hashtypes.add(hashkey)
 
-            for hashtype, bank in hashtypes:
+            for hashtype, bankkey in hashtypes:
                 banks_lines = hashtypes_lines.get(hashtype)
                 if not banks_lines:
                     banks_lines = {}
                     hashtypes_lines[hashtype] = banks_lines
 
-                sublines = banks_lines.get(bank)
+                sublines = banks_lines.get(bankkey)
                 if not sublines:
                     sublines = []
-                    banks_lines[bank] = sublines
+                    banks_lines[bankkey] = sublines
 
                 self._save_lst_name(row, sublines)
 
         # get banks to write
-        banks = [(self.EMPTY_BANKTYPE, False)] #special value for other names
-        banks += list(self._bankpaths.keys()) #all bankkeys
+        bankkeys = [bankkey_empty] #special value for other names
+        bankkeys += list(self._bankpaths.keys()) #all bankkeys
 
-        # general names > init > regular-localized > names
+        # sort by: general names > init > localized names
         def sorter(x):
             bankname, bank_loc = x
-            basebank, _ = os.path.splitext(bankname)
 
             # for hash banks use name if possible
-            if basebank and basebank.isdigit():
-                row = self._wnames.get_namerow(basebank)
+            if bankname and bankname.isdigit():
+                row = self._wnames.get_namerow(bankname)
                 if row and row.hashname:
-                    basebank = row.hashname
+                    bankname = row.hashname
 
-            not_init = basebank.lower() not in ['init','1355168291']
+            not_init = bankname.lower() not in ['init','1355168291'] #TODO: detect renamed init.bnk
 
-            return (basebank != self.EMPTY_BANKTYPE, not_init, bank_loc, basebank)
-        banks.sort(key=sorter)
+            return (bankname != self.EMPTY_BANKTYPE, not_init, bank_loc, bankname)
+        bankkeys.sort(key=sorter)
 
         # may print like: bank > hashtypes (banks_first=True), or hashtypes > banks (mainly a test)
         banks_first = True
         if banks_first:
-            for bankkey in banks:
+            for bankkey in bankkeys:
                 for hashtype in wdefs.fnv_order:
                     self._include_classify_lines(lines, hashtypes_lines, hashtype, bankkey)
         else:
             for hashtype in wdefs.fnv_order:
-                for bankkey in banks:
+                for bankkey in bankkeys:
                     self._include_classify_lines(lines, hashtypes_lines, hashtype, bankkey)
 
         lines.append('')
         return lines
 
-    def _include_classify_lines(self, lines, types_lines, hashtype, bank):
+    def _include_classify_lines(self, lines, types_lines, hashtype, bankkey):
         save_missing = self._cfg.save_missing
         if hashtype not in types_lines and not save_missing:
             return
-        banks = types_lines.get(hashtype)
+        bankkeys = types_lines.get(hashtype)
 
-        if not banks or bank not in banks:
+        if not bankkeys or bankkey not in bankkeys:
             banks_missing = self._missing.get(hashtype)
-            if not banks_missing or bank not in banks_missing:
+            if not banks_missing or bankkey not in banks_missing:
                 return
             sublines = None
         else:
-            sublines = banks.get(bank)
+            sublines = bankkeys.get(bankkey)
 
         missing_lines = None
         # include missing ids at bank level (otherwise at the end)
         if save_missing:
-            missing_lines = self._include_missing(hashtype, bank)
+            missing_lines = self._include_missing(hashtype, bankkey)
 
         if not sublines and not missing_lines:
             return
 
 
         lines.append('')
-        banktext = self._get_banktext(bank)
+        banktext = self._get_banktext(bankkey)
         if banktext:
             banktext = " (%s)" % (banktext)
         lines.append('### %s NAMES%s' % (hashtype.upper(), banktext))
@@ -247,32 +252,42 @@ class Namedumper(object):
         banks[bank] = {}
         return lines
 
+    # bank info used in sections: '### BLAH (banktext)'
     def _get_banktext(self, bankkey):
         bankname, bank_loc = bankkey
-        basebank, _ = os.path.splitext(bankname)
         if not bankname:
             return ''
+
+        bankpath_full, bankfile = self._bankpaths.get(bankkey)
+
+        # remove multiple extensions from RE Engine style names
+        if '.bnk.' in bankfile:
+            index = bankfile.find('.bnk.')
+            bankfile = bankfile[: index + 4]
 
         # optional info
         bankpath = ''
         if self._cfg.bank_paths:
-            bankpath = self._bankpaths.get(bankkey)
-        elif bank_loc is True and self._bank_mix:
+            bankpath = bankpath_full
+        elif bank_loc is True and self._is_bank_mixed:
             # mark localized banks if there are localized and non-localized banks (as some games may use only localized)
             bankpath = 'langs'
 
         if bankpath:
             bankpath = bankpath.replace('\\', '/')
-            bankname = "%s/%s" % (bankpath, bankname)
+            bankfile = "%s/%s" % (bankpath, bankfile)
 
-        if not basebank.isdigit():
-            return bankname
+        # bank is a regular name
+        if not bankname.isdigit():
+            return bankfile
 
-        row = self._wnames.get_namerow(basebank)
-        if not row or not row.hashname:
-            return bankname
+        # bank is a number and has hashname
+        row = self._wnames.get_namerow(bankname)
+        if row and row.hashname:
+            return "%s: %s" % (bankfile, row.hashname)
 
-        return "%s: %s" % (bankname, row.hashname)
+        # plain name (with or without path)
+        return bankfile
 
     def _save_lst_name(self, row, lines):
         #logging.debug("names: using '%s'", row.hashname)

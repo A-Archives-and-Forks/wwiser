@@ -188,6 +188,13 @@ class NodeRoot(NodeElement):
         # bank is usually hashed and used as bank's sid
         bankname = os.path.basename(self.__filename) #[:-4] #
         bankname = os.path.splitext(bankname)[0]
+
+        # RE Engine games use multi-extensions
+        if '.bnk' in bankname.lower():
+            index = bankname.find('.bnk')
+            if index > 0:
+                bankname = bankname[:index]
+
         return bankname
 
     def add_string(self, string):

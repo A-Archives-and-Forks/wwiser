@@ -42,8 +42,8 @@ class Names(object):
         self._names_fuzzy = {}
         self._db = None
         self._loaded_wwnames = {}
-        self._current_bankpaths = {} #existing banks info, in the form of (bank, localized) = path
-        self._missing = {} # [hashtype] = {(bank, localized)} = [ids]
+        self._current_bankpaths = {} #existing banks info, in the form of (bankname, localized) = (path, bankfile)
+        self._missing = {} # [hashtype] = {(bankname, localized)} = [ids]
         self._fnv = wfnv.Fnv()
         # flags
         self._cfg = wnconfig.Config()
@@ -91,17 +91,23 @@ class Names(object):
         if bankkey is None:
             return
 
-        key = (hashtype, bankkey)
-        row.hashtypes.add(key) # type > bank which uses it
+        hashkey = (hashtype, bankkey)
+        row.hashtypes.add(hashkey) # type > bank which uses it
 
-    # saves a list of banks 
+    # saves a list of unique banks 
+    # mainly used to group banks when saving a names list.
     def _register_classify_bank(self, node):
-        bank = node.get_root().get_filename()
-        lang = node.get_root().get_lang()
-        path = node.get_root().get_path()
+        nroot = node.get_root()
+        bankfile = nroot.get_filename()
+        bankname = nroot.get_bankname()
+        lang = nroot.get_lang()
+        path = nroot.get_path()
         localized = lang != 0 and lang != 393239870 #early or regular SFX
-        
-        self._current_bankpaths[(bank, localized)] = path
+
+        # TODO: improve bankkey with some object, maybe use project + id as key
+        bankkey = (bankname, localized)
+        bankval = (path, bankfile)
+        self._current_bankpaths[bankkey] = bankval
         pass
 
     def _get_register_bankkey(self, hashtype, node):
@@ -110,32 +116,32 @@ class Names(object):
             if not node:
                 return None
 
-            bank = node.get_root().get_filename()
+            bankname = node.get_root().get_bankname()
             lang = node.get_root().get_lang()
             if hashtype in wdefs.fnv_order_join:
-                bank = self.EMPTY_BANKTYPE
+                bankname = self.EMPTY_BANKTYPE
                 lang = self.EMPTY_BANKLANG
         else:
-            bank = self.EMPTY_BANKTYPE
+            bankname = self.EMPTY_BANKTYPE
             lang = self.EMPTY_BANKLANG
 
         localized = lang != 0 and lang != 393239870 #early or regular SFX
-        return (bank, localized)
+        return (bankname, localized)
 
     def _mark_unused(self, id, hashtype, node):
         bankkey = self._get_register_bankkey(hashtype, node)
         if bankkey is None:
             return
 
-        banks = self._missing.get(hashtype)
-        if not banks:
-            banks = {}
-            self._missing[hashtype] = banks
+        bankkeys = self._missing.get(hashtype)
+        if not bankkeys:
+            bankkeys = {}
+            self._missing[hashtype] = bankkeys
 
-        ids = banks.get(bankkey)
+        ids = bankkeys.get(bankkey)
         if not ids:
             ids = {}
-            banks[bankkey] = ids
+            bankkeys[bankkey] = ids
 
         ids[id] = True
 
