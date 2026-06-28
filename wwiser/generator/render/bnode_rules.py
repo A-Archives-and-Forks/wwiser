@@ -159,5 +159,8 @@ class AkTransitionRules(object):
     def get_rules(self):
         return self._rules
 
+    def get_transitions(self):
+        return self._ntrns
+
     def has_transitions(self):
         return self._ntrns

@@ -13,8 +13,7 @@ class Transitions(object):
     #--------------------------------------------------------------------------
 
     def add(self, rules):
-        for btrn in rules.ntrns:
-            
+        for btrn in rules.get_transitions():
             if btrn.tid in self._done:
                 continue
             self._done[btrn.tid] = True
