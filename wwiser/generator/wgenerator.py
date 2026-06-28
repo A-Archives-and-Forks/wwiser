@@ -1,4 +1,4 @@
-import logging
+import logging, time
 from . import wfilter, wmover, wtxtp_cache, wreport
 from .render import wbuilder, wrenderer, wstate, wglobalsettings
 from ..parser import wdefs
@@ -191,15 +191,25 @@ class Generator(object):
     def generate(self):
         try:
             logging.info("generator: start")
+
+            start_time = time.time()
+
             self._prepare()
 
             self._setup()
             self._write_normal()
             self._write_unused()
+
+            end_time = time.time()
+
+            elapsed = end_time - start_time
+
+            logging.info("generator: elapsed %fs", elapsed)
+
             self._report()
 
         except Exception: # as e
-            logging.warn("generator: PROCESS ERROR! (report)")
+            logging.warning("generator: PROCESS ERROR! (report)")
             logging.exception("")
             raise
         return
